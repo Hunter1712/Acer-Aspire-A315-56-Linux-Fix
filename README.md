@@ -193,7 +193,9 @@ RTC file missing: Some systems may use a different RTC device (e.g., rtc1 instea
 
 ## 🧾 Credits
 
-This workaround is based on kernel community discussions about suspend-to-RAM workarounds for early boot device detection.
+This workaround is based on kernel community discussions about suspend-to-RAM workarounds for early boot device detection from the archwiki
+
+https://wiki.archlinux.org/title/Laptop/Acer#Aspire_3_A315-56_internal_storage_not_showing_up
 
 ## 📜 License
 
