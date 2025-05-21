@@ -19,6 +19,92 @@ This workaround supports:
 2. Immediately suspends the system to RAM (`echo mem > /sys/power/state`).
 3. The system resumes from RTC wakeup and continues booting, resolving early SATA detection problems.
 
+## 🧩 Chroot Instructions (If Applying from Live USB)
+
+If you're applying this workaround right after installing Linux but before your first reboot (e.g., from a live USB or rescue environment), you may need to chroot into your installed system depending on your distribution.
+
+Follow the instructions for your distro:
+### 🟦 Ubuntu / Debian / Pop!_OS (initramfs-tools)
+
+✅ Automatic chrooting – No manual chroot needed.
+
+The ubuntu.sh script:
+
+Detects the installation target directory /target (default for installers like Ubiquity),
+
+Binds necessary system directories (/dev, /proc, /sys, /run),
+
+Enters a chroot automatically and applies the workaround.
+
+Just run the script normally after booting the live USB and mounting your system at /target.
+
+### 🟧 Arch Linux / Manjaro (mkinitcpio)
+
+⚠️ Manual chroot required if running from a live environment.
+
+Before running the archlinux.sh script, mount your root partition and chroot manually:
+
+    mount /dev/sdXn /mnt               # Replace /dev/sdXn with your root partition
+    arch-chroot /mnt
+
+Then run:
+
+    bash /path/to/archlinux.sh
+
+This is required because mkinitcpio must be run inside the installed system’s environment.
+
+### 🟥 Fedora / RHEL / AlmaLinux (dracut)
+
+⚠️ Manual chroot required if applying from a live USB or rescue mode.
+
+Fedora-based installers mount the installed system at /mnt/sysroot or /mnt/sysimage. Adjust if needed.
+
+Mount and bind system directories, then chroot:
+
+    mount --bind /dev /mnt/sysroot/dev
+    mount --bind /proc /mnt/sysroot/proc
+    mount --bind /sys /mnt/sysroot/sys
+    mount --bind /run /mnt/sysroot/run
+
+    chroot /mnt/sysroot
+
+Run the script inside the chroot:
+
+    bash /path/to/fedora.sh
+
+Use /mnt/sysimage instead of /mnt/sysroot if that matches your environment.
+
+Dracut builds the initramfs for the environment it runs in, so chrooting ensures the initramfs rebuild targets your installed system.
+
+## 🔌 Running the Script from USB Inside the Chroot
+
+If your script is on a USB drive and you are already inside the chroot, do the following:
+
+Identify your USB device:
+
+    lsblk
+
+Create a mount point inside the chroot (e.g., /mnt/usb):
+
+    mkdir -p /mnt/usb
+
+Mount the USB device:
+
+    mount /dev/sdX1 /mnt/usb      # Replace /dev/sdX1 with your USB device partition
+
+Change directory to the USB mount point:
+
+    cd /mnt/usb
+
+Make the script executable and run it:
+
+    chmod +x your-script.sh
+    ./your-script.sh
+
+Add sudo if needed
+
+
+## Running The Scripts
 ## 🟦 For Ubuntu / Debian (initramfs-tools)
 
 Run the Script
