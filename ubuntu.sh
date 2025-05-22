@@ -1,14 +1,11 @@
 #!/bin/bash
 
-# fix-sata-suspend-in-target.sh
-# Apply SATA suspend workaround in /target (e.g. mounted /dev/sdb2)
-
 set -e
 
 TARGET="/target"
 
 if [ ! -d "$TARGET" ] || [ ! -d "$TARGET/etc" ]; then
-    echo "❌ Target directory $TARGET is not valid or not mounted. Exiting."
+    echo "Target directory $TARGET is not valid or not mounted. Exiting."
     exit 1
 fi
 
@@ -17,17 +14,17 @@ for dir in dev proc sys run; do
     mount --bind /$dir "$TARGET/$dir"
 done
 
-echo "🔁 Entering chroot to apply workaround..."
+echo "Entering chroot to apply workaround..."
 chroot "$TARGET" /bin/bash <<'CHROOT_SCRIPT'
 set -e
 
-echo "⚙️  Applying suspend-to-RAM workaround for Acer Aspire 3 A315-56..."
+echo "Applying suspend-to-RAM workaround for Acer Aspire 3 A315-56..."
 
 HOOK_FILE="/etc/initramfs-tools/hooks/suspend-to-ram"
 PREMOUNT_SCRIPT="/etc/initramfs-tools/scripts/init-premount/suspend-to-ram"
 
 # 1. Create initramfs hook
-echo "📄 Creating hook at $HOOK_FILE..."
+echo "Creating hook at $HOOK_FILE..."
 cat << 'EOF' > "$HOOK_FILE"
 #!/bin/sh
 PREREQ=""
@@ -51,7 +48,7 @@ EOF
 chmod +x "$HOOK_FILE"
 
 # 2. Create early boot script
-echo "📄 Creating init-premount script at $PREMOUNT_SCRIPT..."
+echo "Creating init-premount script at $PREMOUNT_SCRIPT..."
 cat << 'EOF' > "$PREMOUNT_SCRIPT"
 #!/bin/sh
 # suspend-to-ram workaround for Acer Aspire 3 A315-56
@@ -89,16 +86,16 @@ EOF
 chmod +x "$PREMOUNT_SCRIPT"
 
 # 3. Update initramfs
-echo "🔃 Updating initramfs..."
+echo "Updating initramfs..."
 update-initramfs -u
 
-echo "✅ Workaround applied. Reboot the system to take effect."
+echo "Workaround applied. Reboot the system to take effect."
 CHROOT_SCRIPT
 
 # 4. Cleanup
-echo "🧹 Cleaning up mounts..."
+echo "Cleaning up mounts..."
 for dir in run sys proc dev; do
     umount -lf "$TARGET/$dir" || true
 done
 
-echo "✅ All done. You may now reboot into the installed system."
+echo "All done. You may now reboot into the installed system."
