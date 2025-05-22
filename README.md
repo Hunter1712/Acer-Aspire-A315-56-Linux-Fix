@@ -1,204 +1,123 @@
-# Acer-Aspire-A315-56-Linux-Fix
+# 🛠 Suspend-to-RAM Workaround: Full Guide (Chroot to Execution)
 
-# Suspend-to-RAM Workaround for Linux Systems
+This guide helps users apply a suspend-to-RAM workaround from a live USB environment (e.g., after fresh install, before first boot), including all chroot steps and script execution, tailored for each supported Linux distribution.
 
-This repository provides a workaround for Suspend-to-RAM (S3 sleep) issues on certain laptops such as the **Acer Aspire 3 A315-56**. It sets an RTC wakealarm to wake the system after a brief suspend during early boot, allowing the kernel to properly detect SATA storage.
+## ⚙️ Prerequisites
 
-## ⚠️ Important Notice
+A Linux system that fails to detect the SATA drive at boot without suspend/resume.
 
-**Only follow the instructions for your Linux distribution family.**  
-This workaround supports:
+A live USB/rescue environment.
 
-- **Debian/Ubuntu/Pop!_OS** (uses `initramfs-tools`)
-- **Arch Linux/Manjaro** (uses `mkinitcpio`)
-- **Fedora/RHEL/AlmaLinux** (uses `dracut`)
+Your target root partition (e.g., /dev/sda2).
 
-## 🧪 What It Does
+This repository cloned or copied to a USB drive or downloaded to the live environment.
 
-1. Sets an RTC wake alarm for 2 seconds in the future.
-2. Immediately suspends the system to RAM (`echo mem > /sys/power/state`).
-3. The system resumes from RTC wakeup and continues booting, resolving early SATA detection problems.
+## Debian / Ubuntu / Pop!_OS (initramfs-tools)
 
-## 🧩 Chroot Instructions (If Applying from Live USB)
+✅ No manual chroot required
 
-If you're applying this workaround right after installing Linux but before your first reboot (e.g., from a live USB or rescue environment), you may need to chroot into your installed system depending on your distribution.
+Boot into the live USB.
 
-Follow the instructions for your distro:
-### 🟦 Ubuntu / Debian / Pop!_OS (initramfs-tools)
+Mount the installed system:
 
-✅ Automatic chrooting – No manual chroot needed.
+    sudo mount /dev/sdXn /target  # Replace sdXn with your root partition
 
-The ubuntu.sh script:
+If the script is on a USB drive, identify and mount it:
 
-Detects the installation target directory /target (default for installers like Ubiquity),
-
-Binds necessary system directories (/dev, /proc, /sys, /run),
-
-Enters a chroot automatically and applies the workaround.
-
-Just run the script normally after booting the live USB and mounting your system at /target.
-
-### 🟧 Arch Linux / Manjaro (mkinitcpio)
-
-⚠️ Manual chroot required if running from a live environment.
-
-Before running the archlinux.sh script, mount your root partition and chroot manually:
-
-    mount /dev/sdXn /mnt               # Replace /dev/sdXn with your root partition
-    arch-chroot /mnt
-
-Then run:
-
-    bash /path/to/archlinux.sh
-
-This is required because mkinitcpio must be run inside the installed system’s environment.
-
-### 🟥 Fedora / RHEL / AlmaLinux (dracut)
-
-⚠️ Manual chroot required if applying from a live USB or rescue mode.
-
-Fedora-based installers mount the installed system at /mnt/sysroot or /mnt/sysimage. Adjust if needed.
-
-Mount and bind system directories, then chroot:
-
-    mount --bind /dev /mnt/sysroot/dev
-    mount --bind /proc /mnt/sysroot/proc
-    mount --bind /sys /mnt/sysroot/sys
-    mount --bind /run /mnt/sysroot/run
-
-    chroot /mnt/sysroot
-
-Run the script inside the chroot:
-
-    bash /path/to/fedora.sh
-
-Use /mnt/sysimage instead of /mnt/sysroot if that matches your environment.
-
-Dracut builds the initramfs for the environment it runs in, so chrooting ensures the initramfs rebuild targets your installed system.
-
-## 🔌 Running the Script from USB Inside the Chroot
-
-If your script is on a USB drive and you are already inside the chroot, do the following:
-
-Identify your USB device:
-
-    lsblk
-
-Create a mount point inside the chroot (e.g., /mnt/usb):
-
+    lsblk                             # Find your USB device
     mkdir -p /mnt/usb
-
-Mount the USB device:
-
-    mount /dev/sdX1 /mnt/usb      # Replace /dev/sdX1 with your USB device partition
-
-Change directory to the USB mount point:
-
+    sudo mount /dev/sdY1 /mnt/usb     # Replace sdY1 with your USB partition
     cd /mnt/usb
+    chmod +x ubuntu.sh
 
-Make the script executable and run it:
-
-    chmod +x your-script.sh
-    ./your-script.sh
-
-Add sudo if needed
-
-
-## Running The Scripts
-## 🟦 For Ubuntu / Debian (initramfs-tools)
-
-Run the Script
+Run the script:
 
     sudo ./ubuntu.sh
 
-This will:
+## Arch Linux / Manjaro (mkinitcpio)
 
-Create the necessary hook and script.
+⚠️ Manual chroot required
 
-Update initramfs.
+Boot into the live USB.
 
-Clean up and prompt you to reboot.
+Mount the installed system:
 
-## 🟧 For Arch Linux / Manjaro (mkinitcpio)
+    sudo mount /dev/sdXn /mnt
 
-Run:
+If the script is on a USB drive:
 
-    sudo ./archlinux.sh
+    lsblk
+    mkdir -p /mnt/usb
+    sudo mount /dev/sdY1 /mnt/usb
+    cp -r /mnt/usb /mnt/root/workaround   # Or any location inside root
 
-This script will:
+Chroot into the installed system:
 
-Create the hook in /etc/initcpio/hooks/suspend-to-ram
+    sudo arch-chroot /mnt
+    cd /root/workaround                    # Or the location you used
+    chmod +x archlinux.sh
+    ./archlinux.sh
 
-Create the install file in /etc/initcpio/install/suspend-to-ram
+## Fedora / RHEL / AlmaLinux (dracut)
 
-Insert the hook into your HOOKS=(...) array in /etc/mkinitcpio.conf
+⚠️ Manual chroot required
 
-Rebuild the initramfs with mkinitcpio -P
+Boot into the live USB.
 
-Afterward, reboot to test.
+Mount and bind:
 
-## 🟥 For Fedora / RHEL / AlmaLinux (dracut)
+    sudo mount --bind /dev /mnt/sysroot/dev
+    sudo mount --bind /proc /mnt/sysroot/proc
+    sudo mount --bind /sys /mnt/sysroot/sys
+    sudo mount --bind /run /mnt/sysroot/run
 
-Run:
+If the script is on a USB drive:
 
-    sudo ./fedora.sh
+    lsblk
+    mkdir -p /mnt/sysroot/mnt/usb
+    sudo mount /dev/sdY1 /mnt/sysroot/mnt/usb
 
-This will:
+Chroot and run:
 
-Create a custom Dracut module under /usr/lib/dracut/modules.d/90suspend-to-ram/
+    sudo chroot /mnt/sysroot
+    cd /mnt/usb
+    chmod +x fedora.sh
+    ./fedora.sh
 
-Include the suspend hook and module-setup script
 
-Rebuild the initramfs using dracut -f
+## ✅ After Reboot
 
-After this, reboot your system.
+When you reboot:
 
-## ✅ Verifying It Works
+The screen should briefly go black, then resume.
 
-Reboot your machine.
+Your SATA/root drive should now be detected.
 
-You should briefly notice your screen going black then on again indicating a suspend/resume.
-
-Your root device (SATA) should now be detected, and boot continues normally.
+The boot process continues as normal.
 
 ## 🧼 Uninstall Instructions
-
-Depending on your system:
-
-### ubuntu:
+### Debian / Ubuntu
 
     sudo rm /etc/initramfs-tools/hooks/suspend-to-ram
     sudo rm /etc/initramfs-tools/scripts/init-premount/suspend-to-ram
     sudo update-initramfs -u
 
-### archlinux:
+### Arch Linux
 
     sudo rm /etc/initcpio/hooks/suspend-to-ram
     sudo rm /etc/initcpio/install/suspend-to-ram
     sudo sed -i 's/ suspend-to-ram//' /etc/mkinitcpio.conf
     sudo mkinitcpio -P
 
-### fedora:
+### Fedora / RHEL
 
     sudo rm -rf /usr/lib/dracut/modules.d/90suspend-to-ram
     sudo dracut -f
 
-## 🛟 Troubleshooting
-
-System doesn’t suspend/resume: Ensure your laptop supports S3 and that the wakealarm can be written to /sys/class/rtc/rtc0/wakealarm.
-
-No root device detected still: Boot with a live USB and check /dmesg output for disk detection issues.
-
-RTC file missing: Some systems may use a different RTC device (e.g., rtc1 instead of rtc0).
-
 ## 🧾 Credits
 
-This workaround is based on kernel community discussions about suspend-to-RAM workarounds for early boot device detection from the archwiki
-
-https://wiki.archlinux.org/title/Laptop/Acer#Aspire_3_A315-56_internal_storage_not_showing_up
+[Arch Wiki workaround for Acer Aspire A315-56](https://wiki.archlinux.org/title/Laptop/Acer#Aspire_3_A315-56_internal_storage_not_showing_up)
 
 ## 📜 License
 
-MIT License – use at your own risk.
-
-
+MIT License – Use at your own risk.
